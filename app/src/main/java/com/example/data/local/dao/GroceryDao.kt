@@ -123,6 +123,9 @@ interface GroceryDao {
     @Query("UPDATE orders SET orderStatus = :status WHERE orderId = :orderId")
     suspend fun updateOrderStatus(orderId: String, status: String)
 
+    @Query("UPDATE orders SET paymentStatus = :status, paymentTransactionId = :txnId WHERE orderId = :orderId")
+    suspend fun updatePaymentStatus(orderId: String, status: String, txnId: String = "")
+
     @Query("UPDATE orders SET deliveryPartnerName = :partnerName, deliveryPartnerPhone = :partnerPhone, orderStatus = 'OUT_FOR_DELIVERY' WHERE orderId = :orderId")
     suspend fun assignDeliveryPartner(orderId: String, partnerName: String, partnerPhone: String)
 

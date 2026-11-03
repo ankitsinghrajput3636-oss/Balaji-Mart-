@@ -86,10 +86,6 @@ fun ProfileScreen(
     var inputOtp by remember { mutableStateOf("") }
     var otpSent by remember { mutableStateOf(false) }
 
-    var showAdminPinDialog by remember { mutableStateOf(false) }
-    var adminPinInput by remember { mutableStateOf("") }
-    var pinError by remember { mutableStateOf(false) }
-
     Surface(
         modifier = modifier.fillMaxSize().testTag("profile_screen"),
         color = Color(0xFFF7F9F8)
@@ -260,7 +256,7 @@ fun ProfileScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { showAdminPinDialog = true }
+                            .clickable { viewModel.navigateTo(AppScreen.STORE_LOGIN) }
                             .testTag("admin_panel_entry_card"),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
                         border = androidx.compose.foundation.BorderStroke(1.dp, StoreGreenPrimary)
@@ -316,6 +312,7 @@ fun ProfileScreen(
 
         // Phone Number OTP Dialog
         if (showOtpDialog) {
+            val generatedOtp by viewModel.generatedOtp.collectAsState()
             AlertDialog(
                 onDismissRequest = { showOtpDialog = false },
                 title = {
@@ -343,7 +340,7 @@ fun ProfileScreen(
                             )
                         } else {
                             Text(
-                                text = "OTP sent to +91 $inputPhone. Use code: 1234",
+                                text = "SMS OTP code sent to +91 $inputPhone: ${generatedOtp ?: "1234"}",
                                 fontSize = 12.sp,
                                 color = StoreGreenPrimary,
                                 fontWeight = FontWeight.SemiBold
@@ -358,10 +355,10 @@ fun ProfileScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             TextButton(
-                                onClick = { inputOtp = "1234" },
+                                onClick = { inputOtp = generatedOtp ?: "1234" },
                                 modifier = Modifier.align(Alignment.End)
                             ) {
-                                Text("Auto-fill OTP (1234)", fontSize = 11.sp)
+                                Text("Auto-fill OTP (${generatedOtp ?: "1234"})", fontSize = 11.sp)
                             }
                         }
                     }
@@ -371,15 +368,14 @@ fun ProfileScreen(
                         onClick = {
                             if (!otpSent) {
                                 if (inputPhone.length >= 10) {
+                                    viewModel.requestPhoneOtp(inputPhone)
                                     otpSent = true
+                                } else {
+                                    viewModel.toastMessage.value = "Enter valid 10-digit phone number"
                                 }
                             } else {
-                                if (inputOtp == "1234" || inputOtp.length == 4) {
-                                    viewModel.userPhone.value = inputPhone
-                                    viewModel.toastMessage.value = "Login Successful with OTP! 🎉"
+                                viewModel.verifyPhoneOtp(inputOtp) {
                                     showOtpDialog = false
-                                } else {
-                                    viewModel.toastMessage.value = "Invalid OTP! Try 1234"
                                 }
                             }
                         },
@@ -396,74 +392,6 @@ fun ProfileScreen(
             )
         }
 
-        // Store Admin PIN Dialog
-        if (showAdminPinDialog) {
-            AlertDialog(
-                onDismissRequest = {
-                    showAdminPinDialog = false
-                    adminPinInput = ""
-                    pinError = false
-                },
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = StoreGreenPrimary)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "Store Owner Admin Access")
-                    }
-                },
-                text = {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = "Enter Store Owner PIN to access catalog, order controls and inventory management (Default PIN: 1234):",
-                            fontSize = 12.sp,
-                            color = TextSecondary
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        OutlinedTextField(
-                            value = adminPinInput,
-                            onValueChange = { adminPinInput = it },
-                            label = { Text("Admin PIN") },
-                            placeholder = { Text("1234") },
-                            singleLine = true,
-                            isError = pinError,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        if (pinError) {
-                            Text(
-                                text = "Incorrect PIN! Default is 1234",
-                                color = Color.Red,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (adminPinInput == "1234" || adminPinInput.isBlank()) {
-                                showAdminPinDialog = false
-                                adminPinInput = ""
-                                viewModel.navigateTo(AppScreen.ADMIN_DASHBOARD)
-                            } else {
-                                pinError = true
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = StoreGreenPrimary)
-                    ) {
-                        Text("Enter Dashboard")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = {
-                        showAdminPinDialog = false
-                        adminPinInput = ""
-                    }) {
-                        Text("Cancel")
-                    }
-                }
-            )
-        }
     }
 }
 

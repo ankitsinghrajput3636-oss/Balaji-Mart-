@@ -75,9 +75,12 @@ data class Order(
     val orderTime: Long = System.currentTimeMillis(),
     val estimatedDeliveryMinutes: Int = 12,
     val deliveryAddress: String,
+    val customerLatitude: Double = 28.6139,
+    val customerLongitude: Double = 77.2090,
     val customerPhone: String,
     val customerName: String,
     val orderNotes: String = "",
+    val paymentTransactionId: String = "",
     val deliveryPartnerName: String? = null,
     val deliveryPartnerPhone: String? = null
 )

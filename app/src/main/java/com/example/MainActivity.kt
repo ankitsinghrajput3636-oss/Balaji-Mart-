@@ -63,8 +63,11 @@ import com.example.data.local.BalajiDatabase
 import com.example.data.repository.GroceryRepository
 import com.example.ui.components.AddressSelectorSheet
 import com.example.ui.components.ProductDetailSheet
+import com.example.ui.components.StoreLogo
+import com.example.ui.components.LogoSize
 import com.example.ui.components.TopStoreBar
 import com.example.ui.screens.admin.AdminDashboardScreen
+import com.example.ui.screens.admin.StoreLoginScreen
 import com.example.ui.screens.customer.CartScreen
 import com.example.ui.screens.customer.CategoriesScreen
 import com.example.ui.screens.customer.CheckoutScreen
@@ -262,6 +265,7 @@ fun BalajiGroceryApp(viewModel: GroceryViewModel) {
                 AppScreen.SEARCH -> SearchScreen(viewModel = viewModel)
                 AppScreen.WISHLIST -> WishlistScreen(viewModel = viewModel)
                 AppScreen.NOTIFICATIONS -> NotificationsScreen(viewModel = viewModel)
+                AppScreen.STORE_LOGIN -> StoreLoginScreen(viewModel = viewModel)
                 AppScreen.ADMIN_DASHBOARD,
                 AppScreen.ADMIN_PRODUCTS,
                 AppScreen.ADMIN_ORDERS,
@@ -296,32 +300,19 @@ fun SplashScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(StoreGreenPrimary),
+            .background(StoreGreenDark),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(24.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(96.dp)
-                    .clip(CircleShape)
-                    .background(Color.White),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "🛒", fontSize = 48.sp)
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                text = "Balaji Mart",
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White,
-                    letterSpacing = 1.sp
-                )
+            StoreLogo(
+                size = LogoSize.LARGE,
+                showTagline = true,
+                isDarkTheme = true
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))

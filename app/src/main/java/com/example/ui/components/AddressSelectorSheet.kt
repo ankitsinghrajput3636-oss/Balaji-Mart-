@@ -53,15 +53,37 @@ import com.example.ui.theme.TextSecondary
 import com.example.ui.viewmodel.GroceryViewModel
 import com.example.ui.viewmodel.SavedAddress
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.platform.LocalContext
+import com.example.util.LocationHelper
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddressSelectorSheet(
     viewModel: GroceryViewModel,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     val selectedAddress by viewModel.selectedAddress.collectAsState()
     val settings by viewModel.storeSettings.collectAsState()
     val maxRadius = settings?.deliveryRadiusKm ?: 2.0
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (granted) {
+            viewModel.updateCurrentGpsLocation(context)
+            onDismiss()
+        } else {
+            viewModel.toastMessage.value = "Location permission is required to detect live GPS distance"
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -104,6 +126,38 @@ fun AddressSelectorSheet(
                     fontSize = 11.sp,
                     color = StoreGreenPrimary,
                     fontWeight = FontWeight.Medium
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Live GPS Detection Button
+            Button(
+                onClick = {
+                    if (LocationHelper.hasLocationPermission(context)) {
+                        viewModel.updateCurrentGpsLocation(context)
+                        onDismiss()
+                    } else {
+                        locationPermissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                        )
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = StoreGreenPrimary),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("detect_live_gps_button")
+            ) {
+                Icon(imageVector = Icons.Default.MyLocation, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Use Current GPS Location 📍",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
                 )
             }
 

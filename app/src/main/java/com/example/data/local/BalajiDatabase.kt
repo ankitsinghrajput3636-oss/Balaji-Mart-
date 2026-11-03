@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
         NotificationItem::class,
         Review::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class BalajiDatabase : RoomDatabase() {
@@ -53,6 +53,7 @@ abstract class BalajiDatabase : RoomDatabase() {
                     BalajiDatabase::class.java,
                     "balaji_grocery.db"
                 )
+                    .fallbackToDestructiveMigration()
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

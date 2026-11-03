@@ -137,6 +137,10 @@ class GroceryRepository(private val dao: GroceryDao) {
         )
     }
 
+    suspend fun updatePaymentStatus(orderId: String, status: String, txnId: String = "") {
+        dao.updatePaymentStatus(orderId, status, txnId)
+    }
+
     suspend fun assignDeliveryPartner(orderId: String, partnerName: String, partnerPhone: String) {
         dao.assignDeliveryPartner(orderId, partnerName, partnerPhone)
         dao.insertNotification(

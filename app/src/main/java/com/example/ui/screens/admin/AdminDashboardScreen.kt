@@ -89,6 +89,11 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.viewmodel.AppScreen
 import com.example.ui.viewmodel.GroceryViewModel
+import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.ui.platform.LocalContext
+import com.example.util.LocationHelper
 import java.util.UUID
 
 enum class AdminTab {
@@ -569,6 +574,8 @@ fun AdminOrdersTab(
     orders: List<Order>,
     deliveryPartners: List<DeliveryPartner>
 ) {
+    val context = LocalContext.current
+
     if (orders.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(text = "No orders received yet", color = TextMuted)
@@ -583,12 +590,15 @@ fun AdminOrdersTab(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         items(orders) { order ->
+            val isPaid = order.paymentStatus == "PAID"
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
+                    // Header Row: Order ID, Status, Payment Status
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -617,12 +627,122 @@ fun AdminOrdersTab(
 
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(text = order.itemsSummary, fontSize = 12.sp, color = TextPrimary)
-                    Text(text = "📍 ${order.deliveryAddress}", fontSize = 11.sp, color = TextSecondary, maxLines = 1)
-                    Text(text = "Amount: ₹${order.totalAmount.toInt()} (${order.paymentMethod})", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = StoreGreenDark)
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Customer address & Turn-by-turn navigation shortcut
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFFF9FAFB))
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "📍 ${order.deliveryAddress}",
+                                fontSize = 11.sp,
+                                color = TextPrimary,
+                                maxLines = 2
+                            )
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // Call Customer button
+                            IconButton(
+                                onClick = { LocationHelper.openPhoneDialer(context, order.customerPhone) },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Phone,
+                                    contentDescription = "Call Customer",
+                                    tint = StoreGreenPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+
+                            // Turn-by-turn Google Maps Navigation
+                            Button(
+                                onClick = {
+                                    LocationHelper.openGoogleMapsNavigation(
+                                        context = context,
+                                        destLat = order.customerLatitude,
+                                        destLng = order.customerLongitude,
+                                        destLabel = order.deliveryAddress
+                                    )
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Navigation, contentDescription = null, modifier = Modifier.size(12.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Navigate 🗺️", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Payment Row & Verification
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Amount: ₹${order.totalAmount.toInt()} (${order.paymentMethod})",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = StoreGreenDark
+                            )
+                            if (order.paymentTransactionId.isNotBlank()) {
+                                Text(
+                                    text = "Txn/UTR: ${order.paymentTransactionId}",
+                                    fontSize = 10.sp,
+                                    color = TextMuted
+                                )
+                            }
+                        }
+
+                        // Payment Status Pill
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(if (isPaid) StatusGreen else Color(0xFFD97706))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = if (isPaid) "PAID ✅" else "PAYMENT PENDING ⏳",
+                                fontSize = 9.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // If payment is pending, owner can mark paid upon cash/UPI receipt
+                    if (!isPaid && order.orderStatus != "CANCELLED") {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        OutlinedButton(
+                            onClick = { viewModel.updatePaymentStatus(order.orderId, "PAID") },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = StoreGreenPrimary),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(32.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Payment, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Verify & Mark as Received / Paid 💰", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
 
                     Divider(color = Color(0xFFF3F4F6), modifier = Modifier.padding(vertical = 8.dp))
 
-                    // Order Actions
+                    // Order Status Progression Actions
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
