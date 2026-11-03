@@ -1,0 +1,6 @@
+{
+  "name": "Balaji Mart",
+  "description": "Quick-commerce grocery delivery app for Balaji Mart with 10-minute delivery, 19+ categories, smart cart, live tracking, and admin dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
